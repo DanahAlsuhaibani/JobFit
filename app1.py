@@ -5,6 +5,50 @@ import docx2txt
 import PyPDF2 as pdf
 from dotenv import load_dotenv
 
+import mysql.connector # type: ignore
+
+
+# Database Connection (Replace with your credentials)
+mydb = mysql.connector.connect(
+  host="localhost",
+  user="root",
+  password="",
+  database="try"
+)
+
+mycursor = mydb.cursor() 
+
+
+# Function to fetch data from database
+def fetch_data():
+  mycursor.execute("SELECT Date, Title, Status, City, Link, Description FROM post")
+  myresult = mycursor.fetchall()
+  return myresult
+
+# Streamlit App
+
+st.title("Data from Database and Resume Evaluation (Optional)")
+
+# Database Section
+st.header("Database Information")
+data = fetch_data()
+
+if data:
+  st.write("Showing fetched data from your MySQL database:")
+  for row in data:
+      
+      st.write(f"Date: {row[0]}")
+      st.write(f"Title: {row[1]}")
+      st.write(f"Status: {row[2]}")
+      st.write(f"City: {row[3]}")
+      Link= row[4]
+      st.write(f"Link: {Link}")
+      Description=row[5]
+      st.write(f"Description: {Description}")
+      st.write("---")
+else:
+  st.write("No data found in the database.")
+
 # Load environment variables from a .env file
 load_dotenv()
 
@@ -69,7 +113,6 @@ I want the response in one single string having the structure
 # Initialize Streamlit app
 st.title("Intelligent ATS-Enhance Your Resume ATS")
 st.markdown('<style>h1{color: orange; text-align: center;}</style>', unsafe_allow_html=True)
-job_description = st.text_area("Paste the Job Description",height=300)
 uploaded_file = st.file_uploader("Upload Your Resume", type=["pdf", "docx"], help="Please upload a PDF or DOCX file")
 
 submit_button = st.button("Submit")
@@ -80,7 +123,7 @@ if submit_button:
             resume_text = extract_text_from_pdf_file(uploaded_file)
         elif uploaded_file.type == "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
             resume_text = extract_text_from_docx_file(uploaded_file)
-        response_text = generate_response_from_gemini(input_prompt_template.format(text=resume_text, job_description=job_description))
+        response_text = generate_response_from_gemini(input_prompt_template.format(text=resume_text, job_description= Description))
 
         # Extract Job Description Match percentage from the response
         match_percentage_str = response_text.split('"Job Description Match":"')[1].split('"')[0]
